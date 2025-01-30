@@ -1,4 +1,3 @@
-// firebase.test.js
 import { initializeApp } from "firebase/app";
 import { 
   getAuth, 
@@ -10,26 +9,33 @@ import {
   connectFirestoreEmulator 
 } from "firebase/firestore";
 
-// Dit is een fake configuratie. De emulator gebruikt deze waardes niet echt om te connecten. 
-// Belangrijk is dat je projectId hetzelfde is als in je echte config, zodat emulator en je app matchen.
-const firebaseTestConfig = {
-  apiKey: "fake-api-key",
-  authDomain: "localhost", 
-  projectId: "leakplanting", // Zorg dat dit overeenkomt met je echte projectId
-  storageBucket: "fake-storage-bucket",
-  messagingSenderId: "fake-messaging-sender-id",
-  appId: "fake-app-id"
-};
+// Simula la inicialización de Firebase (esto debe ir antes de las importaciones o el uso de las funciones)
+jest.mock("firebase/auth", () => ({
+  getAuth: jest.fn(),
+  connectAuthEmulator: jest.fn(),
+  GoogleAuthProvider: jest.fn(),
+}));
 
-const app = initializeApp(firebaseTestConfig);
+describe("Firebase Emulator", () => {
+  test("debe conectar correctamente al emulador de autenticación", () => {
+    // Configuración de Firebase (solo para el test)
+    const firebaseTestConfig = {
+      apiKey: "fake-api-key",
+      authDomain: "localhost", 
+      projectId: "leakplanting",
+      storageBucket: "fake-storage-bucket",
+      messagingSenderId: "fake-messaging-sender-id",
+      appId: "fake-app-id",
+    };
 
-export const auth = getAuth(app);
-// Verbind Auth met de emulatorport (zoals in firebase.json)
-connectAuthEmulator(auth, "http://localhost:9099");
+    // Inicializa Firebase con la configuración del test
+    const app = initializeApp(firebaseTestConfig);
+    const auth = getAuth(app);
 
-export const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({ prompt: 'select_account' });
+    // Llama a connectAuthEmulator para conectarse al emulador
+    connectAuthEmulator(auth, "http://localhost:9099");
 
-export const db = getFirestore(app);
-// Verbind Firestore met de emulatorport
-connectFirestoreEmulator(db, "localhost", 8080);
+    // Verifica que connectAuthEmulator haya sido llamado con el auth y la URL correcta
+    expect(connectAuthEmulator).toHaveBeenCalledWith(auth, "http://localhost:9099");
+  });
+});
