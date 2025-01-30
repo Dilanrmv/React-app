@@ -33,32 +33,41 @@ function Chat() {
 
   useEffect(() => {
     if (!currentUser) return;
+  
     const userUid = currentUser.uid;
     const q = query(
       collection(db, "chats"),
       where("participants", "array-contains", userUid)
     );
-
+  
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      let chats = [];
-      snapshot.forEach((doc) => {
+      const chats = snapshot.docs.map((doc) => {
         const chatData = doc.data();
-        const otherParticipant = chatData.participants.find(
-          (participant) => participant !== userUid
-        );
-        chats.push({
+        const otherParticipant = findOtherParticipant(chatData.participants, userUid);
+        const displayName = getDisplayName(otherParticipant);
+  
+        return {
           ...chatData,
           id: doc.id,
-          displayName:
-            users.find((u) => u.id === otherParticipant)?.displayName ||
-            "Onbekend",
-        });
+          displayName,
+        };
       });
+  
       setChats(chats);
     });
-
-    return () => unsubscribe();
+  
+    return () => unsubscribe(); // Esto es para limpiar la suscripción cuando el componente se desmonte
   }, [currentUser, users]);
+  
+  // Funciones auxiliares
+  function findOtherParticipant(participants, userUid) {
+    return participants.find((participant) => participant !== userUid);
+  }
+  
+  function getDisplayName(otherParticipant) {
+    return users.find((u) => u.id === otherParticipant)?.displayName || "Onbekend";
+  }
+  
 
   useEffect(() => {
     if (!currentUser) return;
